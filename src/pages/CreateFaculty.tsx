@@ -7,4 +7,4 @@ const CreateFaculty = () => {
   )
 }
 
-export default CreateFaculty
+export default CreateFaculty 
