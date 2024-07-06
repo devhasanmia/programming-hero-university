@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/LoginPage.js
 import { Form, Input, Button, Checkbox, Card, Typography } from 'antd';
 
 const { Title } = Typography;
 
 const LoginPage = () => {
-  const onFinish = (values) => {
+  const onFinish = (values: any) => {
     console.log('Success:', values);
   };
 
-  const onFinishFailed = (errorInfo) => {
+  const onFinishFailed = (errorInfo: any) => {
     console.log('Failed:', errorInfo);
   };
 
