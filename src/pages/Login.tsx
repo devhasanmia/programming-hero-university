@@ -1,58 +1,90 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/LoginPage.js
-import { Form, Input, Button, Checkbox, Card, Typography } from 'antd';
+import { Button, Form, Input, Alert, Card, Row, Col } from "antd";
+import { useForm, Controller } from "react-hook-form";
+import { useLoginMutation } from "../redux/features/auth/authApi";
+import { useAppDispatch } from "../redux/hooks";
+import { setUser } from "../redux/features/auth/authSlice";
+import { verifyToken } from "../utils/verifyToken";
 
-const { Title } = Typography;
+const Login = () => {
+  const { control, handleSubmit, formState: { errors } } = useForm();
+  const [login, { isLoading, isError, error, data }] = useLoginMutation();
+  const dispatch = useAppDispatch();
 
-const LoginPage = () => {
-  const onFinish = (values: any) => {
-    console.log('Success:', values);
+  const onSubmit = async (data) => {
+    const userInfo = {
+      id: data.id,
+      password: data.password,
+    };
+    try {
+      const result = await login(userInfo).unwrap();
+      const user = await verifyToken(result.data.accessToken);
+      dispatch(setUser({ user: user, token: result.data.accessToken }));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const onFinishFailed = (errorInfo: any) => {
-    console.log('Failed:', errorInfo);
+  const getErrorMessage = () => {
+    if (isError && error && error.response) {
+      const { data } = error.response;
+      if (data.message === "Password do not matched") {
+        return "Password do not match. Please check your credentials.";
+      }
+      return data.message || "Login failed";
+    }
+    return null;
   };
 
   return (
-    <div className="login-container">
-      <Card className="login-card">
-        <Title level={2} className="login-title">Login</Title>
-        <Form
-          name="basic"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          layout="vertical"
-        >
-          <Form.Item
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: 'Please input your username!' }]}
-          >
-            <Input />
-          </Form.Item>
+    <Row justify="center" align="middle" style={{ minHeight: '100vh' }}>
+      <Col xs={22} sm={16} md={12} lg={8}>
+        <Card title="Login" bordered={false} style={{ padding: '20px', borderRadius: '8px' }}>
+          <Form onFinish={handleSubmit(onSubmit)} layout="vertical">
+            {getErrorMessage() && (
+              <Alert 
+                message={getErrorMessage()} 
+                type="error" 
+                showIcon 
+                style={{ marginBottom: '20px' }} 
+              />
+            )}
+            
+            <Form.Item
+              label="ID"
+              validateStatus={errors.id ? "error" : ""}
+              help={errors.id ? errors.id.message : null}
+            >
+              <Controller
+                name="id"
+                control={control}
+                rules={{ required: "ID is required" }}
+                render={({ field }) => <Input {...field} />}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Please input your password!' }]}
-          >
-            <Input.Password />
-          </Form.Item>
+            <Form.Item
+              label="Password"
+              validateStatus={errors.password ? "error" : ""}
+              help={errors.password ? errors.password.message : null}
+            >
+              <Controller
+                name="password"
+                control={control}
+                rules={{ required: "Password is required" }}
+                render={({ field }) => <Input.Password {...field} />}
+              />
+            </Form.Item>
 
-          <Form.Item name="remember" valuePropName="checked">
-            <Checkbox>Remember me</Checkbox>
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" className="login-button">
-              Submit
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+            <Form.Item>
+              <Button type="primary" htmlType="submit" loading={isLoading} block>
+                Login
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Col>
+    </Row>
   );
 };
 
-export default LoginPage;
+export default Login;
